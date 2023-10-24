@@ -17,7 +17,7 @@ namespace Server.Services
             //{
             //    throw new RpcException(new Status(StatusCode.Internal, $"Not here:Try again"));
             //}
-
+            Console.WriteLine($"I got : {request.ContentValue}");
 
             #region context
             var contextv = context.GetHttpContext();
@@ -28,7 +28,6 @@ namespace Server.Services
             #endregion
             #region headers
             var userAgent = context.RequestHeaders.GetValue("user-agent");
-
             context.ResponseTrailers.Add(new Metadata.Entry("Trailing", "i'm in front row acting like a header!"));
             #endregion
 

@@ -3,8 +3,8 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Balancer;
 using Grpc.Net.Client.Configuration;
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Server;
 
 var defaultMethodConfig = new MethodConfig
@@ -16,7 +16,7 @@ var defaultMethodConfig = new MethodConfig
         InitialBackoff = TimeSpan.FromSeconds(1),
         MaxBackoff = TimeSpan.FromSeconds(5),
         BackoffMultiplier = 1.5,
-        RetryableStatusCodes = { StatusCode.Unavailable, StatusCode.DeadlineExceeded }
+        RetryableStatusCodes = { StatusCode.Unavailable, StatusCode.Internal }
     },
 
     //HedgingPolicy = new HedgingPolicy
@@ -30,7 +30,7 @@ var defaultMethodConfig = new MethodConfig
 
 
 
-//var channel = GrpcChannel.ForAddress("https://localhost:5000", new GrpcChannelOptions
+//var channel = GrpcChannel.ForAddress("http://localhost:5000", new GrpcChannelOptions
 //{
 //    ServiceConfig = new ServiceConfig
 //    {
@@ -43,9 +43,9 @@ var defaultMethodConfig = new MethodConfig
 //});
 
 
+Request request = new Request() { ContentValue = ".NET developer days" };
 
-
-#region ClientSide Load Balancing
+//#region ClientSide Load Balancing
 var factory = new StaticResolverFactory(addr => new[]
 {
     new BalancerAddress("localhost", 5000),
@@ -55,8 +55,8 @@ var factory = new StaticResolverFactory(addr => new[]
 var services = new ServiceCollection();
 services.AddSingleton<ResolverFactory>(factory);
 
-var channel = GrpcChannel.ForAddress(//uses grpc lib
-    "static:///localhost",
+var channel = GrpcChannel.ForAddress(
+    "static://localhost",
     new GrpcChannelOptions
     {
         Credentials = ChannelCredentials.Insecure,
@@ -67,18 +67,22 @@ var channel = GrpcChannel.ForAddress(//uses grpc lib
         ServiceProvider = services.BuildServiceProvider()
     });
 
-//var services = new ServiceCollection();
-//services.AddSingleton<ResolverFactory>(new DnsResolverFactory(refreshInterval: TimeSpan.FromSeconds(30)));
-
-//#region actualcall
-Request request = new Request() { ContentValue = "NDC" };
-
 
 var client = new Greeter.GreeterClient(channel);
-var reply = client.SayHello(request, options: new CallOptions() { });
-Console.WriteLine(reply.Message);
-#endregion
+var response = client.SayHello(request);
+Console.WriteLine($"The reply is: {response.Message}");
+////var services = new ServiceCollection();
+////services.AddSingleton<ResolverFactory>(new DnsResolverFactory(refreshInterval: TimeSpan.FromSeconds(30)));
 
+
+
+
+////var client = new Greeter.GreeterClient(channel);
+////var reply = client.SayHello(request, options: new CallOptions() { });
+////Console.WriteLine(reply.Message);
+//#endregion
+
+#region retry
 
 //var retryPolicy = new MethodConfig
 //{
@@ -100,13 +104,15 @@ Console.WriteLine(reply.Message);
 //    {
 //        MethodConfigs = { retryPolicy }
 //    }
-           
+
 //};
 
 
 //var cts = new CancellationTokenSource();
-//using var channelWithRetry = GrpcChannel.ForAddress("https://localhost:5001", options);
+//using var channelWithRetry = GrpcChannel.ForAddress("http://localhost:5000", options);
 //var client = new Greeter.GreeterClient(channelWithRetry);
 //var response1 = client.SayHello(request);
 //Console.WriteLine(response1);
-//Console.ReadLine();
+
+#endregion
+Console.ReadLine();

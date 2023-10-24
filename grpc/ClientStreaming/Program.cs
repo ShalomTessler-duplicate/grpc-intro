@@ -1,7 +1,9 @@
-﻿using Grpc.Core;
+﻿
+using Grpc.Core;
+using Grpc.Net.Client;
 using Server;
 
-Channel channel = new Channel("127.0.0.1:5000", ChannelCredentials.Insecure);
+var channel = GrpcChannel.ForAddress("http://localhost:5000");
 
 var client = new Greeter.GreeterClient(channel);
 
